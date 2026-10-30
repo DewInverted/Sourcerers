@@ -206,7 +206,7 @@ variable.
 
 ```bash
 pip install -r requirements-dev.txt
-python -m pytest            # 34 tests: hashing, dedup, URL parsing, API flow
+python -m pytest            # 37 tests: hashing, dedup, URL parsing, ranking, API flow
 python run.py --reload      # auto-reload while editing
 ```
 
