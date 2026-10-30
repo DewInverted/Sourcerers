@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sourcerers — find the original clip, never reuse the same one</title>
+<link rel="stylesheet" href="/static/styles.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔎</text></svg>" />
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <div class="brand-text">
+        <strong>Sourcerers</strong>
+        <span>clip sourcing desk</span>
+      </div>
+    </div>
+
+    <nav class="nav" id="nav">
+      <button class="nav-item is-active" data-view="find">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <span>Find sources</span>
+      </button>
+      <button class="nav-item" data-view="library">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg>
+        <span>Library</span>
+        <em class="nav-count" id="count-clips">0</em>
+      </button>
+      <button class="nav-item" data-view="duplicates">
+        <svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>
+        <span>Repeats</span>
+        <em class="nav-count" id="count-dupes">0</em>
+      </button>
+      <button class="nav-item" data-view="scan">
+        <svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>Scan folder</span>
+      </button>
+      <button class="nav-item" data-view="settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.11a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.11a1.7 1.7 0 0 0 1.55-1.11 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.11a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.11a1.7 1.7 0 0 0-1.49 1z"/></svg>
+        <span>Settings</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <div class="mini-stats">
+        <div><span id="stat-clips">0</span><small>clips</small></div>
+        <div><span id="stat-sourced">0</span><small>sourced</small></div>
+        <div><span id="stat-used">0</span><small>used</small></div>
+      </div>
+      <div class="cap-row" id="cap-row"></div>
+      <div class="version" id="version">v1.0.0</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div>
+        <h1 id="view-title">Find sources</h1>
+        <p id="view-sub">Drop a clip or screenshot — I'll find where the original lives.</p>
+      </div>
+      <div class="topbar-actions" id="topbar-actions"></div>
+    </header>
+
+    <!-- FIND ------------------------------------------------------------ -->
+    <section class="view is-active" id="view-find">
+      <div class="dropzone" id="dropzone" tabindex="0">
+        <input type="file" id="file-input" accept="video/*,image/*" hidden />
+        <div class="dz-inner">
+          <div class="dz-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7 9m5-5 5 5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+          </div>
+          <h2>Drop a clip, screenshot or paste with <kbd>Ctrl</kbd>+<kbd>V</kbd></h2>
+          <p>MP4, MOV, MKV, WebM, GIF, PNG, JPG — everything stays on this PC.</p>
+          <div class="dz-actions">
+            <button class="btn btn-primary" id="browse-btn">Choose a file</button>
+            <span class="dz-or">or</span>
+            <div class="url-field">
+              <input type="url" id="url-input" placeholder="paste a YouTube / TikTok / IG link" />
+              <button class="btn" id="url-btn">Fetch clip</button>
+            </div>
+          </div>
+          <p class="dz-hint" id="dz-hint"></p>
+        </div>
+      </div>
+
+      <div class="options-row">
+        <label class="switch">
+          <input type="checkbox" id="opt-deep" />
+          <span class="switch-track"></span>
+          <span>Thorough search <small>(3 frames per engine, slower but catches crops)</small></span>
+        </label>
+        <div class="engine-picker" id="engine-picker"></div>
+      </div>
+
+      <div id="find-progress" class="panel progress-panel hidden">
+        <div class="pipeline" id="pipeline"></div>
+        <div class="bar"><div class="bar-fill" id="progress-bar"></div></div>
+        <p class="progress-msg" id="progress-msg">working…</p>
+      </div>
+
+      <div id="find-result"></div>
+    </section>
+
+    <!-- LIBRARY --------------------------------------------------------- -->
+    <section class="view" id="view-library">
+      <div class="toolbar">
+        <div class="search-field">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="library-search" placeholder="Search titles, notes, projects, tags…" />
+        </div>
+        <div class="chips" id="library-filters">
+          <button class="chip is-active" data-filter="">All</button>
+          <button class="chip" data-filter="duplicate">Repeats</button>
+          <button class="chip" data-filter="sourced">Sourced</button>
+          <button class="chip" data-filter="analyzed">Unsearched</button>
+        </div>
+        <a class="btn btn-ghost" href="/api/export.csv">Export CSV</a>
+      </div>
+      <div id="library-list" class="clip-grid"></div>
+    </section>
+
+    <!-- DUPLICATES ------------------------------------------------------ -->
+    <section class="view" id="view-duplicates">
+      <div class="callout" id="dupe-callout">
+        Footage that already exists in your library more than once. Grouped by visual
+        similarity, so a re-encode or a trimmed version still shows up here.
+      </div>
+      <div id="dupe-list"></div>
+    </section>
+
+    <!-- SCAN ------------------------------------------------------------ -->
+    <section class="view" id="view-scan">
+      <div class="panel">
+        <h2>Scan a folder for repeats</h2>
+        <p class="muted">Point me at your b-roll folder. I'll fingerprint every clip and flag
+          ones you already have — handy before a batch edit.</p>
+        <div class="scan-form">
+          <input id="scan-folder" placeholder="C:\Users\you\Videos\broll  or  ~/Movies/broll" />
+          <label class="switch small"><input type="checkbox" id="scan-recursive" checked />
+            <span class="switch-track"></span><span>include subfolders</span></label>
+          <button class="btn btn-primary" id="scan-btn">Scan folder</button>
+        </div>
+        <p class="dz-hint">Runs locally with ffmpeg. ~1 second per clip, up to 400 files per scan.</p>
+      </div>
+      <div id="scan-progress" class="panel progress-panel hidden">
+        <div class="bar"><div class="bar-fill" id="scan-bar"></div></div>
+        <p class="progress-msg" id="scan-msg"></p>
+      </div>
+      <div id="scan-result"></div>
+    </section>
+
+    <!-- SETTINGS -------------------------------------------------------- -->
+    <section class="view" id="view-settings">
+      <div class="panel">
+        <h2>Duplicate sensitivity</h2>
+        <p class="muted">Lower the distance threshold to make matching stricter.</p>
+        <div class="settings-grid">
+          <label>Frames sampled per clip
+            <input type="range" id="set-frames" min="2" max="16" step="1" />
+            <output id="out-frames">6</output>
+          </label>
+          <label>Frame distance threshold
+            <input type="range" id="set-mean" min="0.08" max="0.4" step="0.01" />
+            <output id="out-mean">0.20</output>
+          </label>
+          <label>Coverage needed
+            <input type="range" id="set-cov" min="0.2" max="0.9" step="0.05" />
+            <output id="out-cov">0.45</output>
+          </label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Search engines</h2>
+        <div id="engine-settings" class="engine-list"></div>
+        <label class="field">
+          <span>Bing Visual Search key <small>(optional — free Azure tier)</small></span>
+          <input type="password" id="set-bing" placeholder="paste key to enable Bing" />
+        </label>
+        <label class="switch small">
+          <input type="checkbox" id="set-enrich" /><span class="switch-track"></span>
+          <span>Fetch real titles / channel names for results</span>
+        </label>
+        <label class="switch small">
+          <input type="checkbox" id="set-fullvideo" /><span class="switch-track"></span>
+          <span>Prefer full-length uploads over Shorts/reposts</span>
+        </label>
+      </div>
+
+      <div class="panel warn-panel">
+        <h2>Preview mode</h2>
+        <label class="switch small">
+          <input type="checkbox" id="set-demo" /><span class="switch-track"></span>
+          <span>Show sample results (fake links, for looking at the layout only)</span>
+        </label>
+        <p class="dz-hint">Data folder: <code id="data-dir">—</code></p>
+      </div>
+
+      <button class="btn btn-primary" id="save-settings">Save settings</button>
+    </section>
+  </main>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-card">
+    <header>
+      <h3 id="modal-title">Clip</h3>
+      <button class="icon-btn" id="modal-close">✕</button>
+    </header>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
