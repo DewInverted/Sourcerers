@@ -1,0 +1,13 @@
+# local library + thumbnails (your data, never commit)
+data/
+
+# python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# os noise
+.DS_Store
+Thumbs.db
